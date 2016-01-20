@@ -1,0 +1,38 @@
+#!/bin/bash
+
+Usage () { cat 1>&2 <<EOF
+Usage: $0 zip_or_rar [...]
+EOF
+}
+
+if [ $# -lt 1 ] ; then
+  Usage
+  exit 2
+fi
+
+plerf () {
+  shopt -s nullglob
+  python _plerf.py "$1"/*.png "$1"/*.jpg > "$1".html
+}
+
+set -e
+
+for archive; do
+  case "$archive" in
+    *.rar)
+      outdir=$( basename "$archive" .rar )
+      if ! [ -d "$outdir" ] ; then
+        unrar x -- "$archive"
+      fi
+      plerf "$outdir"
+      ;;
+    *.zip)
+      outdir=$( basename "$archive" .zip )
+      if ! [ -d "$outdir" ] ; then
+        open -W -n "$archive"
+      fi
+      plerf "$outdir"
+      ;;
+    *) Usage ; exit 1 ;;
+  esac
+done
