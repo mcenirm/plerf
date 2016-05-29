@@ -12,7 +12,8 @@ fi
 
 plerf () {
   shopt -s nullglob
-  python _plerf.py "$1"/*.png "$1"/*.jpg > "$1".html
+  echo '<link rel="stylesheet" href="_.css" />' > "$1".html
+  python _plerf.py "$1"/*.png "$1"/*.jpg >> "$1".html
 }
 
 set -e
