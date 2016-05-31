@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-from __future__ import print_function
+import html
 import re
 import sys
 
@@ -20,4 +18,4 @@ def sort_nicely(l):
 
 
 for x in sort_nicely(list(sys.argv[1:])):
-    print("""<img src='{0}'>""".format(x))
+    print("""<img src='{0}'>""".format(html.escape(x, quote=True)))
