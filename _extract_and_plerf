@@ -28,7 +28,23 @@ for archive; do
       plerf "$outdir"
       ;;
     *.zip)
-      outdir=$( basename "$archive" .zip )
+      base=$( basename "$archive" .zip )
+      outdirs=$( unzip -l "$archive" \
+        | sed -n -e 's,^[ ]*[0-9]*  [0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]   ,,p' \
+        | sed -e 's,[^/]*$,/,' \
+        | uniq )
+      outdir=${outdirs%//}
+      if [ "$outdirs" = / ] ; then
+        outdir=${base}
+      elif [ "$( echo " $outdirs" | wc -l )" -gt 1 ] ; then
+        outdir=${base}
+      elif [ "$outdirs" = "$outdir" ] ; then
+        echo "Unexpected condition for: $archive"
+        declare -p outdir outdirs
+        exit 3
+      else
+        : Archive contains one top-level folder
+      fi
       if ! [ -d "$outdir" ] ; then
         open -W -n "$archive"
       fi
