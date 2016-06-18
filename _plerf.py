@@ -1,6 +1,6 @@
-import html
 import re
 import sys
+import urllib.parse
 
 
 def sort_nicely(l):
@@ -18,4 +18,4 @@ def sort_nicely(l):
 
 
 for x in sort_nicely(list(sys.argv[1:])):
-    print("""<img src='{0}'>""".format(html.escape(x, quote=True)))
+    print("""<img src='{0}'>""".format(urllib.parse.quote(x)))
