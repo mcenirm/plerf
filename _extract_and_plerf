@@ -1,7 +1,7 @@
 #!/bin/bash
 
 Usage () { cat 1>&2 <<EOF
-Usage: $0 zip_or_rar [...]
+Usage: $0 zip_or_rar_or_dir [...]
 EOF
 }
 
@@ -50,6 +50,13 @@ for archive; do
       fi
       plerf "$outdir"
       ;;
-    *) Usage ; exit 1 ;;
+    *)
+      if [ -d "$archive" ] ; then
+        plerf "$archive"
+      else
+        Usage
+        exit 1
+      fi
+      ;;
   esac
 done
