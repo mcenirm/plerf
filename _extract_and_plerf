@@ -5,7 +5,7 @@ Usage: $0 zip_or_rar_or_dir [...]
 EOF
 }
 
-if [ $# -lt 1 ] ; then
+if [ $# -lt 1 -o ! -e "$1" ] ; then
   Usage
   exit 2
 fi
