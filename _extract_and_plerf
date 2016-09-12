@@ -49,7 +49,16 @@ determine_plerf_target_for_dir () {
 }
 
 determine_plerf_target_for_rar () {
-  basename "$1" .rar
+  local archive=$1
+  local paths=$( unrar lb "$archive" )
+  case "$paths" in
+    */*)
+      printf '%s' "$paths" | sed -e 's#/.*$##' | sort | uniq
+      ;;
+    *)
+      basename "$archive" .rar
+      ;;
+  esac
 }
 
 extract_rar () {
