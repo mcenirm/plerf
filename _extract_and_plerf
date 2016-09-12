@@ -18,45 +18,85 @@ plerf () {
 
 set -e
 
-for archive; do
-  case "$archive" in
+guess_archive_type () {
+  if [ -d "$1" ] ; then
+    echo dir ; return
+  fi
+
+  case "$1" in
     *.rar)
-      outdir=$( basename "$archive" .rar )
-      if ! [ -d "$outdir" ] ; then
-        unrar x -- "$archive"
-      fi
-      plerf "$outdir"
+      echo rar ; return
       ;;
     *.zip)
-      base=$( basename "$archive" .zip )
-      outdirs=$( unzip -l "$archive" \
-        | sed -n -e 's,^[ ]*[0-9]*  [0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]   ,,p' \
-        | sed -e 's,[^/]*$,/,' \
-        | uniq )
-      outdir=${outdirs%//}
-      if [ "$outdirs" = / ] ; then
-        outdir=${base}
-      elif [ "$( echo " $outdirs" | wc -l )" -gt 1 ] ; then
-        outdir=${base}
-      elif [ "$outdirs" = "$outdir" ] ; then
-        echo "Unexpected condition for: $archive"
-        declare -p outdir outdirs
-        exit 3
-      else
-        : Archive contains one top-level folder
-      fi
-      if ! [ -d "$outdir" ] ; then
-        open -W -n "$archive"
-      fi
-      plerf "$outdir"
+      echo zip ; return
       ;;
     *)
-      if [ -d "$archive" ] ; then
-        plerf "$archive"
-      else
-        Usage
-        exit 1
-      fi
-      ;;
+      case "$( file -b -- "$1" )" in
+        Zip\ archive\ data*)
+          echo zip ; return
+          ;;
+        RAR\ archive\ data*)
+          echo rar ; return
+          ;;
+      esac
   esac
+  echo unknown ; return
+}
+
+
+determine_plerf_target_for_dir () {
+  echo "$1"
+}
+
+determine_plerf_target_for_rar () {
+  basename "$1" .rar
+}
+
+extract_rar () {
+  unrar x -- "$1"
+}
+
+determine_plerf_target_for_zip () {
+  local archive=$1
+  local base=$( basename "$archive" .zip )
+  local outdirs=$( unzip -l "$archive" \
+    | sed -n -e 's,^[ ]*[0-9]*  [0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]   ,,p' \
+    | sed -e 's,[^/]*$,/,' \
+    | uniq )
+  local outdir=${outdirs%//}
+  if [ "$outdirs" = / ] ; then
+    outdir=${base}
+  elif [ "$( echo " $outdirs" | wc -l )" -gt 1 ] ; then
+    outdir=${base}
+  elif [ "$outdirs" = "$outdir" ] ; then
+    echo 1>&2 "Unexpected condition for: $archive"
+    declare 1>&2 -p outdir outdirs
+    exit 3
+  else
+    : Archive contains one top-level folder
+  fi
+  echo "$outdir"
+}
+
+extract_zip () {
+  open -W -n "$1"
+}
+
+
+for archive; do
+  archive_type=$( guess_archive_type "$archive" )
+  if [ "$archive_type" = unknown ] ; then
+    cat 1>&2 <<EOF
+Error: Unrecognized archive: $archive
+(Expected zip, rar, or directory)
+EOF
+    exit 1
+  fi
+
+  plerf_target=$( determine_plerf_target_for_${archive_type} "$archive" )
+  if ! [ -d "$plerf_target" ] ; then
+    extract_${archive_type} "$archive"
+  fi
+
+  plerf "$plerf_target"
 done
