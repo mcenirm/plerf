@@ -13,7 +13,10 @@ fi
 plerf () {
   shopt -s nullglob
   echo '<link rel="stylesheet" href="_.css" />' > "$1".html
-  python3 _plerf.py "$1"/*.png "$1"/*.jpg >> "$1".html
+  (
+    shopt -s nocaseglob
+    python3 _plerf.py "$1"/*.png "$1"/*.jpg >> "$1".html
+  )
 }
 
 set -e
