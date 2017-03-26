@@ -1,7 +1,32 @@
 #!/bin/bash
 cd "$(dirname "${BASH_SOURCE[0]}")" || exit $?
+
+web_port=8000
+mdns_name=example
+
+mdns_cmd=''
+if command -v dns-sd >/dev/null ; then
+  mdns_cmd=( dns-sd -R "$mdns_name" _http local "$web_port" )
+elif command -v avahi-publish >/dev/null ; then
+  mdns_cmd=( avahi-publish -s "$mdns_name" _http._tcp local "$web_port" )
+fi
+
+web_cmd=''
 if command -v python3 >/dev/null ; then
-  python3 -m http.server
+  web_cmd=( python3 -m http.server "$web_port" )
 else
-  python2 -m SimpleHTTPServer
+  web_cmd=( python2 -m SimpleHTTPServer "$web_port" )
+fi
+
+if [ -n "$mdns_cmd" ] ; then
+  "${web_cmd[@]}" &
+  web_pid=$!
+
+  "${mdns_cmd[@]}" &
+  mdns_pid=$!
+
+  trap "kill -TERM '$web_pid' '$mdns_pid'" INT TERM EXIT
+  wait
+else
+  "${web_cmd[@]}"
 fi
